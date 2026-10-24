@@ -1,0 +1,9 @@
+*.mkv
+*.mp4
+*.ts
+*.jpg
+*.log
+snap_*.jpg
+test_snap.jpg
+Thumbs.db
+Desktop.ini

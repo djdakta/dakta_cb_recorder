@@ -1,0 +1,1 @@
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Get-CimInstance Win32_Process | Where-Object { $_.CommandLine -like '*cb_recorder_autolaunch*' -or ($_.Name -eq 'ffmpeg.exe' -and $_.CommandLine -like '*raw_*_part*') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"
