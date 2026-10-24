@@ -1,40 +1,65 @@
 # CB Stream Recorder Daemon
 
-A lightweight, fully automated Windows monitoring and recording daemon tailored for live streaming channels (Chaturbate LL-HLS). It runs silently in the background, multiplexes dissociated CDN video and audio tracks in real-time, splits sessions into clean 60-minute segments, handles audio/video desync correction upon session completion, and pushes instant snapshot alerts via Telegram.
+A lightweight, fully automated Windows monitoring and recording daemon tailored for live streaming channels (specifically Chaturbate LL-HLS). It runs silently in the background, multiplexes dissociated CDN video and audio tracks in real-time, splits sessions into clean 60-minute segments, handles audio/video desync correction upon session completion, and pushes instant snapshot alerts via Telegram.
 
----
+## 🚀 Overview
 
-## Key Features
+The CB Stream Recorder Daemon is designed to provide autonomous, robust monitoring and recording of live streams.
 
-- **Continuous Standby Monitoring:** Polls the target room every 15 seconds with minimal footprint and zero browser overhead.
-- **CDN Track Multiplexing:** Detects dissociated LL-HLS streams (`chunklist_3` video + `chunklist_5` audio) and remuxes them on-the-fly via FFmpeg copy mode with zero quality loss.
-- **Anti-403 Protection:** Injects necessary HTTP headers (`User-Agent` and `Referer`) into FFmpeg network demuxers to prevent CDN authorization drops.
-- **Hourly Segmentation:** Splits recordings into seamless 60-minute chunks (`raw_YYYYMMDD_HHMMSS_part%03d.mkv`) using Matroska containers to preserve stream integrity in case of unexpected connection loss.
-- **Post-Session Remuxing & A/V Resync:** Automatically converts MKV chunks to web-optimized MP4 files with `aresample=async=1000` drift correction once the broadcaster goes offline.
-- **Telegram Push Notifications:** Sends immediate alerts with live captured frames (via HTML payload with TLS 1.2 support) upon room opening, followed by finalization reports with output file sizes.
-- **Silent Background Operations:** Runs headlessly via VBScript wrappers without command prompt flashes, accompanied by lightweight desktop shortcut utilities for status checks and surgical process termination.
+- **Autonomous Monitoring:** Continuously polls the target room every 15 seconds with a minimal footprint, avoiding heavy browser overhead.
+- **LL-HLS Management:** Seamlessly handles Low-Latency HLS streams. It automatically detects and multiplexes dissociated audio and video chunks on-the-fly, utilizing FFmpeg's stream copy mode for zero quality loss.
+- **60-Minute Segmentation:** Splits the recording into highly manageable and safe 60-minute blocks (`raw_YYYYMMDD_HHMMSS_part%03d.mkv`). This prevents file corruption in case of a sudden network drop by saving smaller, self-contained chunks.
 
----
+## ⚙️ System Prerequisites
 
-## Prerequisites
+To ensure the daemon runs smoothly, the following dependencies must be installed and properly configured in your system environment:
 
-- **Windows 10 / 11** (PowerShell 5.1 or PowerShell 7+)
-- **FFmpeg & FFprobe:** Installed and reachable via system `PATH`.
-- **yt-dlp:** Up-to-date and accessible via system `PATH`.
-- **Telegram Bot:** A bot token and your personal chat ID for alerts.
+- **OS:** Windows 10 or Windows 11
+- **PowerShell:** Version 5.1 or PowerShell 7+
+- **FFmpeg & FFprobe:** Must be installed and added to the system `PATH`. These tools handle stream downloading, multiplexing, and transcoding.
+- **yt-dlp:** Must be installed, kept up-to-date, and added to the system `PATH`. Used for HLS stream extraction and resolution.
 
----
+## 🛠 Configuration
 
-## Architecture & Workflow
+To configure the daemon, open the primary PowerShell script (e.g., `dakta_cb_recorder_telegram_60_min_v8.1.ps1`) and adjust the following parameters located at the top of the script:
 
-```text
-[ Standby Loop (every 15s) ]
-           │
-           ▼
-[ yt-dlp resolves live HLS manifest ]
-     ├── No  ──> Sleep 15s and retry
-     └── Yes ──> 1. Capture snapshot -> Send to Telegram (HTML + TLS 1.2)
-                 2. Launch FFmpeg segment muxer (-c copy, 3600s slices)
-                 3. Wait for broadcaster disconnection
-                 4. Re-encode audio (aresample=async=1000) -> Faststart MP4
-                 5. Send completion report to Telegram -> Return to Standby
+- **Target Room URL:**
+  `$ChannelUrl = "https://chaturbate.com/username/"`
+- **Destination Path:**
+  `$DestDir = "D:\Vidz\CB_Recorder"` (The path where videos will be stored. The script will create it if it doesn't exist).
+- **Telegram Bot Settings (for alerts):**
+  - `$TelegramBotToken = "YOUR_BOT_TOKEN_HERE"`
+  - `$TelegramChatId = "YOUR_CHAT_ID_HERE"`
+- **Minimum File Size:**
+  `$MinFileSize = 10MB` (Segments smaller than this size will be discarded to avoid saving empty/broken chunks).
+
+## 🧰 Auxiliary Scripts
+
+The daemon comes with several auxiliary VBScript and PowerShell tools to help manage its background execution gracefully:
+
+- **`cb_recorder_autolaunch.vbs`:**
+  A simple VBScript wrapper used to launch the main PowerShell script silently. It bypasses the command prompt flash and hides the PowerShell window so the daemon can run completely invisibly in the background.
+
+- **`status_cb_recorder.vbs`:**
+  A lightweight status checker. When executed, it checks the current running processes (looking for the PowerShell daemon and any active FFmpeg instances) and displays a quick popup notification indicating whether the daemon is actively recording, standing by in monitor mode, or entirely inactive.
+
+- **`STOP_CB_RECORDER.ps1`:**
+  A surgical termination script. Instead of brutally killing all PowerShell or FFmpeg instances on the machine, it targets specifically the processes initiated by the daemon (matching the specific command lines and recording patterns), ensuring a clean and precise shutdown of the recording loop.
+
+## 🔎 Container Validation Example
+
+After recording, you can validate that the final `.mp4` container correctly multiplexed both H.264 (video) and AAC (audio) streams using `ffprobe`:
+
+```bash
+ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 stream_20231025_143000_part000.mp4
+# Output expected: h264
+
+ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 stream_20231025_143000_part000.mp4
+# Output expected: aac
+```
+
+Alternatively, running a standard `ffprobe` against the file will show both streams bundled correctly:
+```bash
+ffprobe stream_20231025_143000_part000.mp4
+```
+*Look for `Stream #0:0: Video: h264...` and `Stream #0:1: Audio: aac...` in the output.*
