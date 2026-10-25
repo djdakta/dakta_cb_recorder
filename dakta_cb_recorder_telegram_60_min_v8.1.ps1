@@ -6,8 +6,8 @@ $DestDir          = "D:\Vidz\CB_Recorder"
 $MinFileSize      = 10MB
 
 # Identifiants Telegram
-$TelegramBotToken = "8902344508:AAFtXCS2YabKl4oJwrXnNF_kbYxVuq4NoWg"
-$TelegramChatId   = "997463075"
+$TelegramBotToken = "TG_TOKEN"
+$TelegramChatId   = "TG_CHAT_ID"
 
 # En-têtes HTTP pour éviter les erreurs 403 du CDN
 $UserAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36"
