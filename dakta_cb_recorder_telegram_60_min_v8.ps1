@@ -6,8 +6,8 @@ $DestDir          = "D:\Vidz\CB_Recorder"
 $MinFileSize      = 10MB
 
 # Identifiants Telegram Bot
-$TelegramBotToken = "8902344508:AAFtXCS2YabKl4oJwrXnNF_kbYxVuq4NoWg"
-$TelegramChatId   = "997463075"
+$TelegramBotToken = "TG_TOKEN"
+$TelegramChatId   = "TG_CHAT_ID"
 
 # Drapeaux internes
 $MonitoringActive = $true
